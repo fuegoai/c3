@@ -97,6 +97,7 @@ jobs:
           root: .
           paths:
             - backend/dist
+            - frontend/node_modules
   test-frontend:
     docker:
       # Docker image here
@@ -112,7 +113,6 @@ jobs:
           name: Front-end test
           command: |
             cd frontend
-            npm i
             npm run build
             npm run test
                 
@@ -173,7 +173,6 @@ jobs:
           name: Backend vulnerability check
           command: |
             cd backend
-            npm i
             npm audit fix --audit-level=critical --force
             # npm audit --audit-level=critical
       - save_cache:
