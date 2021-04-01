@@ -427,7 +427,10 @@ jobs:
             else
               return 1
             fi
-      # Here's where you will add some code to rollback on failure  
+      # Here's where you will add some code to rollback on failure 
+      - slack/notify:
+          event: fail
+          template: basic_fail_1 
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
@@ -465,6 +468,9 @@ jobs:
           root: ~/
           paths:
             - deployment_id.txt
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
@@ -508,28 +514,39 @@ workflows:
       - build-backend
       - test-frontend:
           requires: [build-frontend]
+          context: slack-secrets
       - test-backend:
           requires: [build-backend]
+          context: slack-secrets
       - scan-backend:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
+          context: slack-secrets
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          context: slack-secrets
           filters:
             branches:
               only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+          context: slack-secrets
       - run-migrations:
           requires: [configure-infrastructure]
+          context: slack-secrets
       - deploy-frontend:
           requires: [run-migrations]
+          context: slack-secrets
       - deploy-backend:
           requires: [run-migrations]
+          context: slack-secrets
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+          context: slack-secrets
       - cloudfront-update:
           requires: [smoke-test]
+          context: slack-secrets
       - cleanup:
           requires: [cloudfront-update]
+          context: slack-secrets
