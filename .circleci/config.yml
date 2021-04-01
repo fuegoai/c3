@@ -413,6 +413,10 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
+            BACKEND_IP=$(curl -H "token: 50bb6816-e344-43bc-9c3c-210a04617460" --request GET https://api.memstash.io/values/Udapeople-Backend-IP)
+            echo ${BACKEND_IP}
+            export API_URL="http://${BACKEND_IP}:3030/api/status"
+            echo "${API_URL}"
             if curl -s --head ${API_URL} # test if backend exists
             then
               return 0
