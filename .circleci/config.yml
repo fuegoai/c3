@@ -59,6 +59,10 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - frontend/node_modules
 
   build-backend:
     docker:
@@ -146,6 +150,7 @@ jobs:
           name: Frontend fix vulnerabilities
           command: |
             cd frontend
+            # npm update
             npm audit fix --audit-level=critical --force
           when: on_fail
       - persist_to_workspace:
@@ -167,9 +172,9 @@ jobs:
       - run:
           name: Backend vulnerability check
           command: |
-            # cd backend
-            # npm update
-            # npm audit fix --audit-level=critical --force
+            cd backend
+            npm i
+            npm audit fix --audit-level=critical --force
             # npm audit --audit-level=critical
       - save_cache:
           paths: [backend/node_modules]
