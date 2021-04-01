@@ -241,7 +241,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["a9:97:97:b5:1f:ac:7c:51:23:e5:cc:3b:4c:dc:6c:3c"]
+          fingerprints: ["a7:40:c4:3c:74:f7:37:bc:66:1b:de:d2:4a:27:f4:31"]
       - attach_workspace:
           at: .
       - run:
@@ -353,7 +353,7 @@ jobs:
       - attach_workspace:
           at: .
       - add_ssh_keys:
-          fingerprints: ["a9:97:97:b5:1f:ac:7c:51:23:e5:cc:3b:4c:dc:6c:3c"]
+          fingerprints: ["a7:40:c4:3c:74:f7:37:bc:66:1b:de:d2:4a:27:f4:31"]
       - run:
           name: Install dependencies
           command: |
