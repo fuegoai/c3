@@ -97,7 +97,7 @@ jobs:
           root: .
           paths:
             - backend/dist
-            - frontend/node_modules
+            - backend/node_modules
   test-frontend:
     docker:
       # Docker image here
