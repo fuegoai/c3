@@ -499,7 +499,7 @@ jobs:
             export STACKS=($(aws cloudformation list-stacks --region us-west-2 --query "StackSummaries[*].StackName" \
                   --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
       - attach_workspace:
-          at: ~/
+          at: .
       - run:
           name: Remove old stacks and files
           command: |
