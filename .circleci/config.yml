@@ -496,23 +496,15 @@ jobs:
             yum install -y tar gzip
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
             yum -y install nodejs
-            export OldWorkflowID=$(aws cloudformation \
-                  --region us-west-2  list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                  --no-paginate --output text )  >> $BASH_ENV
-            export STACKS=($(aws cloudformation list-stacks --region us-west-2 --query "StackSummaries[*].StackName" \
-                  --stack-status-filter CREATE_COMPLETE --no-paginate --output text))  >> $BASH_ENV
-            echo ${OldWorkflowID}
-            echo ${STACKS[@]}
-            echo ${STACKS}
       - attach_workspace:
           at: ~/
       - run:
           name: Remove old stacks and files
           command: |
-            echo ${OldWorkflowID}
-            echo ${STACKS[@]}
-            echo ${STACKS}
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            OldWorkflowID=$(aws cloudformation \
+                  --region us-west-2  list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                  --no-paginate --output text )
+            if [[ "${OldWorkflowID}" != "${CIRCLE_WORKFLOW_ID:0:7}" ]]
             then
               echo "start cleaning"
               aws s3 --region us-west-2 rm s3://udapeople-${OldWorkflowID} --recursive
