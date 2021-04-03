@@ -59,6 +59,10 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - frontend/node_modules
 
   build-backend:
     docker:
@@ -93,6 +97,7 @@ jobs:
           root: .
           paths:
             - backend/dist
+            - backend/node_modules
   test-frontend:
     docker:
       # Docker image here
@@ -108,7 +113,6 @@ jobs:
           name: Front-end test
           command: |
             cd frontend
-            npm i
             npm run build
             npm run test
                 
@@ -146,6 +150,7 @@ jobs:
           name: Frontend fix vulnerabilities
           command: |
             cd frontend
+            # npm update
             npm audit fix --audit-level=critical --force
           when: on_fail
       - persist_to_workspace:
@@ -167,9 +172,8 @@ jobs:
       - run:
           name: Backend vulnerability check
           command: |
-            # cd backend
-            # npm update
-            # npm audit fix --audit-level=critical --force
+            cd backend
+            npm audit fix --audit-level=critical --force
             # npm audit --audit-level=critical
       - save_cache:
           paths: [backend/node_modules]
@@ -241,7 +245,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["a9:97:97:b5:1f:ac:7c:51:23:e5:cc:3b:4c:dc:6c:3c"]
+          fingerprints: ["a7:40:c4:3c:74:f7:37:bc:66:1b:de:d2:4a:27:f4:31"]
       - attach_workspace:
           at: .
       - run:
@@ -308,14 +312,14 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-      - attach_workspace:
-          at: .
       - run:
           name: Install dependencies
           command: |
             yum install -y tar gzip
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
             yum -y install nodejs
+      - attach_workspace:
+          at: .
       - run:
           name: Get backend url
           command: |
@@ -353,7 +357,7 @@ jobs:
       - attach_workspace:
           at: .
       - add_ssh_keys:
-          fingerprints: ["a9:97:97:b5:1f:ac:7c:51:23:e5:cc:3b:4c:dc:6c:3c"]
+          fingerprints: ["a7:40:c4:3c:74:f7:37:bc:66:1b:de:d2:4a:27:f4:31"]
       - run:
           name: Install dependencies
           command: |
@@ -409,6 +413,10 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
+            BACKEND_IP=$(curl -H "token: 50bb6816-e344-43bc-9c3c-210a04617460" --request GET https://api.memstash.io/values/Udapeople-Backend-IP)
+            echo ${BACKEND_IP}
+            export API_URL="http://${BACKEND_IP}:3030/api/status"
+            echo "${API_URL}"
             if curl -s --head ${API_URL} # test if backend exists
             then
               return 0
@@ -427,7 +435,10 @@ jobs:
             else
               return 1
             fi
-      # Here's where you will add some code to rollback on failure  
+      # Here's where you will add some code to rollback on failure 
+      - slack/notify:
+          event: fail
+          template: basic_fail_1 
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
@@ -465,6 +476,9 @@ jobs:
           root: ~/
           paths:
             - deployment_id.txt
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
@@ -479,20 +493,18 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-            export OldWorkflowID=$(aws cloudformation \
-                  --region us-west-2  list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                  --no-paginate --output text )
-            export STACKS=($(aws cloudformation list-stacks --region us-west-2 --query "StackSummaries[*].StackName" \
-                  --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            yum install -y tar gzip
+            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
+            yum -y install nodejs
       - attach_workspace:
           at: ~/
       - run:
           name: Remove old stacks and files
           command: |
-            echo ${OldWorkflowID}
-            echo ${STACKS[@]}
-            echo ${STACKS}
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            OldWorkflowID=$(aws cloudformation \
+                  --region us-west-2  list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                  --no-paginate --output text )
+            if [[ "${OldWorkflowID}" != "${CIRCLE_WORKFLOW_ID:0:7}" ]]
             then
               echo "start cleaning"
               aws s3 --region us-west-2 rm s3://udapeople-${OldWorkflowID} --recursive
@@ -508,28 +520,39 @@ workflows:
       - build-backend
       - test-frontend:
           requires: [build-frontend]
+          context: slack-secrets
       - test-backend:
           requires: [build-backend]
+          context: slack-secrets
       - scan-backend:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
+          context: slack-secrets
       - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          requires: [build-frontend, build-backend]
+          context: slack-secrets
           filters:
             branches:
-              only: [test-feature-branch]
+              only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+          context: slack-secrets
       - run-migrations:
           requires: [configure-infrastructure]
+          context: slack-secrets
       - deploy-frontend:
           requires: [run-migrations]
+          context: slack-secrets
       - deploy-backend:
           requires: [run-migrations]
+          context: slack-secrets
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+          context: slack-secrets
       - cloudfront-update:
           requires: [smoke-test]
+          context: slack-secrets
       - cleanup:
           requires: [cloudfront-update]
+          context: slack-secrets
