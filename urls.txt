@@ -1,5 +1,5 @@
 URL01= https://github.com/fuegoai/c3/tree/test-feature-branch
 URL02= http://udapeople-23feec2.s3-website-us-west-2.amazonaws.com/#/employees 
-URL03= http://udapeople-23feec2.s3-us-west-2.amazonaws.com/index.html#/employees 
+URL03= http://d3k5rimsii8l8i.cloudfront.net/#/employees
 URL04=  http://54.189.156.5:3030/api/status 
 URL05= http://54.213.76.228:9090
